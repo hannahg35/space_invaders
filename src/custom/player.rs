@@ -57,25 +57,25 @@ impl Player {
 pub fn get_x(&self) -> f32 {
     self.image.get_x()
 }
-    pub fn keypress(&mut self) {
-  
-            // Direction to move in
-            self.move_dir = vec2(0.0, 0.0);
-            self.old_pos = vec2(self.image.get_x(), self.image.get_y());
+    pub fn keypress(&mut self) -> bool {
+        let escape_pressed = is_key_pressed(KeyCode::Escape);
 
-            // Keyboard input
-            if is_key_down(KeyCode::D) || is_key_down(KeyCode::Right) {
-                self.move_dir.x += 1.0;
-            }
+        self.move_dir = vec2(0.0, 0.0);
+        self.old_pos = vec2(self.image.get_x(), self.image.get_y());
 
-            if is_key_down(KeyCode::A) || is_key_down(KeyCode::Left) {
-                self.move_dir.x -= 1.0;
-            }
+        if is_key_down(KeyCode::D) || is_key_down(KeyCode::Right) {
+            self.move_dir.x += 1.0;
+        }
 
-            if self.move_dir.length() > 0.0 {
-                self.move_dir = self.move_dir.normalize();
-            }
-    
+        if is_key_down(KeyCode::A) || is_key_down(KeyCode::Left) {
+            self.move_dir.x -= 1.0;
+        }
+
+        if self.move_dir.length() > 0.0 {
+            self.move_dir = self.move_dir.normalize();
+        }
+
+        escape_pressed
     }
 
     pub fn move_player(&mut self) {

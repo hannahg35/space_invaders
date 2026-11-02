@@ -4,21 +4,18 @@ Date: 2026-10-21
 Program Details: <A reacreation of Space Invaders, but with a Star Wars Theme.>
 */
 
-mod ui;
-mod utils;
 mod custom;
+mod game;
 mod title;
 mod tut;
-mod game;
+mod ui;
+mod utils;
 
-
-use crate::utils::preload_image::TextureManager;
 use crate::utils::preload_image::LoadingScreenOptions;
-
+use crate::utils::preload_image::TextureManager;
 
 use macroquad::prelude::*;
 
-/// Set up window settings before the app runs
 fn window_conf() -> Conf {
     Conf {
         window_title: "Space Invaders".to_string(),
@@ -27,18 +24,21 @@ fn window_conf() -> Conf {
         fullscreen: false,
         high_dpi: true,
         window_resizable: true,
-        sample_count: 4, // MSAA: makes shapes look smoother
+        sample_count: 4,
         ..Default::default()
     }
 }
 
 #[macroquad::main(window_conf)]
 async fn main() {
-
     let mut tm = TextureManager::new();
+    let loading_font = load_ttf_font("assets/AstroSpace-eZ2Bg.ttf")
+        .await
+        .expect("Failed to load loading screen font");
 
     let loading_options = LoadingScreenOptions {
         title: Some("SPACE INVADERS".to_string()),
+        font: Some(loading_font),
         background_color: BLACK,
         bar_background_color: Color::from_hex(0x252A36),
         bar_fill_color: Color::from_hex(0xFFE81F),
@@ -71,7 +71,7 @@ async fn main() {
     .await;
 
     let mut score = 0;
-    
+
     let mut current_screen = "title".to_string();
     let mut last_switch = get_time() - 0.02;
 
@@ -81,7 +81,7 @@ async fn main() {
                 "title" => title::run(tm, score).await,
                 "tut" => tut::run(tm, score).await,
                 "game" => game::run(tm, score).await,
-        
+
                 _ => break,
             };
             last_switch = get_time();

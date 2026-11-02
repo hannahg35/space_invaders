@@ -202,6 +202,8 @@ impl GifLoadingScreenInfo {
 pub struct LoadingScreenOptions {
     /// Title displayed at the top of the loading screen (default: none)
     pub title: Option<String>,
+    /// Optional font used for all loading-screen text (default: system font)
+    pub font: Option<Font>,
     /// Background color of the loading screen (default: DARKGREEN)
     pub background_color: Color,
     /// Progress bar background color (default: DARKGRAY)
@@ -232,6 +234,7 @@ impl Default for LoadingScreenOptions {
     fn default() -> Self {
         Self {
             title: None,
+            font: None,
             background_color: DARKGREEN,
             bar_background_color: DARKGRAY,
             bar_fill_color: GREEN,
@@ -245,6 +248,35 @@ impl Default for LoadingScreenOptions {
             completion_delay: 0.5,
             loading_screen_gifs: Vec::new(),
         }
+    }
+}
+
+fn measure_loading_text(text: &str, font: Option<&Font>, font_size: u16) -> TextDimensions {
+    measure_text(text, font, font_size, 1.0)
+}
+
+fn draw_loading_text(
+    text: &str,
+    x: f32,
+    y: f32,
+    font: Option<&Font>,
+    font_size: u16,
+    color: Color,
+) {
+    if let Some(font) = font {
+        draw_text_ex(
+            text,
+            x,
+            y,
+            TextParams {
+                font: Some(font),
+                font_size,
+                color,
+                ..Default::default()
+            },
+        );
+    } else {
+        draw_text(text, x, y, font_size as f32, color);
     }
 }
 
@@ -628,12 +660,14 @@ impl TextureManager {
             // Draw title if one is provided
             if let Some(title) = &options.title {
                 let title_size = options.title_font_size;
-                let title_dim = measure_text(title, None, title_size, 1.0);
-                draw_text(
+                let font = options.font.as_ref();
+                let title_dim = measure_loading_text(title, font, title_size);
+                draw_loading_text(
                     title,
                     screen_width() / 2.0 - title_dim.width / 2.0,
                     screen_height() / 3.0,
-                    title_size as f32,
+                    font,
+                    title_size,
                     options.text_color,
                 );
             }
@@ -686,11 +720,15 @@ impl TextureManager {
             }
 
             let progress_text = format!("Loading: {:.0}%", progress * 100.0);
-            draw_text(
+            let font = options.font.as_ref();
+            draw_loading_text(
                 &progress_text,
-                screen_width() / 2.0 - measure_text(&progress_text, None, options.progress_font_size, 1.0).width / 2.0,
+                screen_width() / 2.0
+                    - measure_loading_text(&progress_text, font, options.progress_font_size).width
+                        / 2.0,
                 screen_height() / 2.0,
-                options.progress_font_size as f32,
+                font,
+                options.progress_font_size,
                 options.text_color,
             );
 
@@ -712,11 +750,14 @@ impl TextureManager {
                     sound_assets[sound_index].split('/').last().unwrap_or("")
                 };
                 let file_text = format!("Loading: {}", file_name);
-                draw_text(
+                draw_loading_text(
                     &file_text,
-                    screen_width() / 2.0 - measure_text(&file_text, None, options.filename_font_size, 1.0).width / 2.0,
+                    screen_width() / 2.0
+                        - measure_loading_text(&file_text, font, options.filename_font_size).width
+                            / 2.0,
                     bar_y + bar_height + 30.0,
-                    options.filename_font_size as f32,
+                    font,
+                    options.filename_font_size,
                     options.filename_color,
                 );
             }
@@ -748,11 +789,20 @@ impl TextureManager {
                     }
 
                     let text_size = options.progress_font_size + 20; // Slightly larger than progress font
-                    let text_dimensions = measure_text(&options.completion_message, None, text_size, 1.0);
+                    let font = options.font.as_ref();
+                    let text_dimensions =
+                        measure_loading_text(&options.completion_message, font, text_size);
                     let text_x = screen_width() / 2.0 - text_dimensions.width / 2.0;
                     let text_y = screen_height() / 2.0;
 
-                    draw_text(&options.completion_message, text_x, text_y, text_size as f32, options.text_color);
+                    draw_loading_text(
+                        &options.completion_message,
+                        text_x,
+                        text_y,
+                        font,
+                        text_size,
+                        options.text_color,
+                    );
                     next_frame().await;
 
                     // Apply completion delay if specified

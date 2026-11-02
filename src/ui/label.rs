@@ -37,6 +37,10 @@ You can also set the text alignment within a fixed-size label with:
      lbl_out.with_alignment(crate::ui::label::TextAlign::Center);
 Options are crate::ui::label::TextAlign::Left, crate::ui::label::TextAlign::Center, and crate::ui::label::TextAlign::Right.
 
+For a centered label with a background box, use:
+     let mut lbl_out = Label::centered_box("Hello", 30, 40.0, 60.0, 40.0, font);
+The arguments are text, font size, horizontal padding, box height, text baseline offset, and font.
+
 To access the label's position:
      let x = lbl_out.get_x();
      let y = lbl_out.get_y();
@@ -63,7 +67,7 @@ You can also set visibility during creation with:
 
 Example:
      // Load font once at the beginning of your program
-     let font = load_ttf_font("assets/love.ttf").await.unwrap();
+     let font = load_ttf_font("assets/AstroSpace-eZ2Bg.ttf").await.unwrap();
      
      // Create label and apply custom font
      let mut lbl_out = Label::new("Hello\nWorld", 50.0, 100.0, 30);
@@ -85,6 +89,7 @@ pub struct Label {
     text: String,
     x: f32,
     y: f32,
+    background_y_offset: f32,
     font_size: u16,
     foreground: Color,
     background: Option<Color>,
@@ -123,6 +128,7 @@ impl Label {
             text: text.into(),
             x,
             y,
+            background_y_offset: 0.0,
             font_size,
             foreground: BLACK, // Default to black
             background: None,  // No background by default
@@ -146,6 +152,34 @@ impl Label {
         label.calculate_text_dimensions();
         
         label
+    }
+
+    pub fn centered_box<T: Into<String>>(
+        text: T,
+        font_size: u16,
+        horizontal_padding: f32,
+        height: f32,
+        text_baseline_offset: f32,
+        font: Font,
+    ) -> Self {
+        let mut label = Self::new(text, 0.0, 0.0, font_size);
+        label.with_font(font);
+        label.center_box(horizontal_padding, height, text_baseline_offset);
+
+        label
+    }
+
+    fn center_box(&mut self, horizontal_padding: f32, height: f32, text_baseline_offset: f32) {
+        let width = self.cached_max_width + horizontal_padding;
+        let box_x = (screen_width() - width) / 2.0;
+        let box_y = (screen_height() - height) / 2.0;
+
+        self.x = box_x + 5.0;
+        self.y = box_y + text_baseline_offset;
+        self.background_y_offset = text_baseline_offset - self.font_size as f32;
+        self
+            .with_fixed_size(width, height)
+            .with_alignment(TextAlign::Center);
     }
     
     // Calculate and cache text dimensions
@@ -444,7 +478,7 @@ impl Label {
         
         // Calculate positions for all elements
         let bg_x = self.x - 5.0;
-        let bg_y = self.y - self.font_size as f32;
+        let bg_y = self.y - self.font_size as f32 - self.background_y_offset;
         
         // Draw background first
         if let Some(bg) = self.background {
